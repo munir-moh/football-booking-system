@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify
 from database import db, init_db
 from models import Booking
@@ -134,10 +133,6 @@ def confirm_booking(reference):
         "message": f"Booking {reference} confirmed",
         "status": "Confirmed"
     })
-
-@app.route("/ping")
-def ping():
-    return "pong"
 
 
 if __name__ == "__main__":
