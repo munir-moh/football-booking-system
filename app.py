@@ -9,7 +9,6 @@ import string
 
 app = Flask(__name__)
 
-# Enable CORS for all routes
 CORS(app, resources={
     r"/api/*": {
         "origins": ["http://localhost:3000", "https://*"],
@@ -23,12 +22,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 init_db(app)
 
+
 def generate_reference():
     while True:
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
         ref = f"FP-{datetime.utcnow().strftime('%Y%m%d-%H%M')}-{code}"
         if not Booking.query.filter_by(reference=ref).first():
             return ref
+
 
 def is_time_conflict(date, start_time, end_time):
     bookings = Booking.query.filter_by(date=date).all()
@@ -45,22 +46,18 @@ def is_time_conflict(date, start_time, end_time):
 @app.route("/api/book", methods=["POST"])
 def book():
     data = request.get_json()
-    
-    # Handle missing data
+
     if not data:
         return jsonify({"error": "No data provided"}), 400
-    
+
     try:
-        # Accept both naming conventions (camelCase and snake_case)
         name = data.get('name') or data.get('fullName')
         phone = data.get('phone') or data.get('phoneNumber')
         date_str = data.get('date')
         start_time_str = data.get('start_time') or data.get('startTime')
-        
-        # Handle duration as string like "1 hour" or as number
+
         duration = data.get('duration') or data.get('hours')
-        
-        # Validate required fields
+
         if not all([name, phone, date_str, start_time_str, duration]):
             missing = []
             if not name: missing.append('name/fullName')
@@ -69,14 +66,12 @@ def book():
             if not start_time_str: missing.append('start_time/startTime')
             if not duration: missing.append('duration/hours')
             return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
-        
-        # Parse duration
+
         if isinstance(duration, str):
-            # Extract number from strings like "1 hour", "2 hours", etc.
             hours = int(''.join(filter(str.isdigit, duration)))
         else:
             hours = int(duration)
-            
+
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
 
@@ -110,7 +105,7 @@ def book():
         reference=reference,
         status="Pending"
     )
-    
+
     try:
         db.session.add(new_booking)
         db.session.commit()
@@ -180,7 +175,6 @@ def confirm_booking(reference):
     })
 
 
-# Health check endpoint
 @app.route("/", methods=["GET"])
 def health_check():
     return jsonify({
