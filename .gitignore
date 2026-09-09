@@ -1,3 +1,8 @@
 venv/
 instance/
 football_booking.db/
+__pycache__/
+.idea/
+*.pyc
+.vscode/
+.env
