@@ -3,6 +3,7 @@ from flask_cors import CORS
 from database import db, init_db
 from models import Booking
 from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
+from booking_logic import is_time_conflict
 from datetime import datetime, timedelta
 import random
 import string
@@ -29,19 +30,6 @@ def generate_reference():
         ref = f"FP-{datetime.utcnow().strftime('%Y%m%d-%H%M')}-{code}"
         if not Booking.query.filter_by(reference=ref).first():
             return ref
-
-
-def is_time_conflict(date, start_time, end_time):
-    bookings = Booking.query.filter_by(date=date).all()
-    for b in bookings:
-        existing_start = datetime.combine(b.date, b.start_time)
-        existing_end = datetime.combine(b.date, b.end_time)
-        new_start = datetime.combine(date, start_time)
-        new_end = datetime.combine(date, end_time)
-        if new_start < existing_end and new_end > existing_start:
-            return True
-    return False
-
 
 @app.route("/api/book", methods=["POST"])
 def book():
