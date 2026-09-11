@@ -1,14 +1,3 @@
-# ai_tool_schemas.py
-#
-# These describe our Python functions (from ai_tools.py) in the exact
-# format OpenAI's API expects for "tool use" / function calling.
-# Each entry tells the AI: the tool's name, what it does, and what
-# arguments (if any) it needs to call it.
-#
-# IMPORTANT: this file only describes the tools. It does not run them.
-# The actual running happens in the AI service (Step 5), which reads
-# the AI's request and calls the matching real function from ai_tools.py.
-
 TOOLS = [
     {
         "type": "function",

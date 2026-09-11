@@ -4,3 +4,4 @@ flask-cors
 gunicorn
 openai
 python-dotenv
+Flask-Limiter

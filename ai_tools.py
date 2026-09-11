@@ -6,12 +6,10 @@ from config import PRICE_PER_HOUR, MIN_HOURS
 
 
 def get_pitch_info():
-    """Returns general pitch info: hours, facilities, discounts, policy."""
     return PITCH_INFO
 
 
 def get_pricing_info():
-    """Returns price per hour and minimum booking duration."""
     return {
         "price_per_hour": PRICE_PER_HOUR,
         "currency": "NGN",
@@ -20,10 +18,6 @@ def get_pricing_info():
 
 
 def check_pitch_availability(date, start_time, hours):
-    """
-    Checks if the pitch is free for a given date/time/duration.
-    date: "YYYY-MM-DD", start_time: "HH:MM" (24hr), hours: int
-    """
     try:
         booking_date = datetime.strptime(date, "%Y-%m-%d").date()
         start = datetime.strptime(start_time, "%H:%M").time()
@@ -52,7 +46,6 @@ def check_pitch_availability(date, start_time, hours):
 
 
 def get_booking_by_reference(reference):
-    """Looks up a booking's status by its reference code."""
     booking = Booking.query.filter_by(reference=reference).first()
     if not booking:
         return {"found": False, "error": "No booking found with that reference."}

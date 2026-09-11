@@ -1,14 +1,3 @@
-# ai_service.py
-#
-# This is the core "AI brain" of the assistant. It:
-# 1. Sends the conversation + available tools to OpenAI
-# 2. If OpenAI wants to call a tool, runs the real Python function
-# 3. Sends the tool's result back to OpenAI
-# 4. Returns OpenAI's final, natural-language answer
-#
-# Flask (app.py) will call get_ai_response() from this file.
-# Nothing here talks to React directly.
-
 import json
 from openai import OpenAI
 from config import OPENAI_API_KEY
@@ -19,11 +8,11 @@ from ai_tools import (
     check_pitch_availability,
     get_booking_by_reference,
 )
+import logging
+logger = logging.getLogger(__name__)
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Maps a tool's name (as OpenAI will refer to it) to the real Python
-# function that should run when that tool is requested.
 AVAILABLE_FUNCTIONS = {
     "get_pitch_info": get_pitch_info,
     "get_pricing_info": get_pricing_info,
@@ -44,6 +33,7 @@ SYSTEM_PROMPT = (
     "if asked, direct the user to the normal booking form on the website."
 )
 
+MAX_HISTORY_MESSAGES = 10
 
 def get_ai_response(user_message, conversation_history=None):
     """
@@ -56,11 +46,11 @@ def get_ai_response(user_message, conversation_history=None):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     if conversation_history:
-        messages.extend(conversation_history)
+        trimmed_history = conversation_history[-MAX_HISTORY_MESSAGES:]
+        messages.extend(trimmed_history)
 
     messages.append({"role": "user", "content": user_message})
 
-    # First call: let OpenAI see the message and decide if it needs a tool
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
@@ -69,12 +59,9 @@ def get_ai_response(user_message, conversation_history=None):
 
     reply = response.choices[0].message
 
-    # If OpenAI did NOT ask for a tool, we already have the final answer
     if not reply.tool_calls:
         return reply.content
 
-    # Otherwise, OpenAI wants one or more tools run. Add its request to
-    # the conversation, then run each tool and add the result too.
     messages.append(reply)
 
     for tool_call in reply.tool_calls:
@@ -82,10 +69,15 @@ def get_ai_response(user_message, conversation_history=None):
         function_args = json.loads(tool_call.function.arguments)
 
         function_to_call = AVAILABLE_FUNCTIONS.get(function_name)
-        if function_to_call:
-            result = function_to_call(**function_args)
-        else:
+
+        if not function_to_call:
             result = {"error": f"Unknown tool: {function_name}"}
+        else:
+            try:
+                result = function_to_call(**function_args)
+            except Exception as e:
+                logger.error(f"Tool '{function_name}' failed with args {function_args}: {e}")
+                result = {"error": f"Something went wrong while checking that. Please rephrase your question."}
 
         messages.append({
             "role": "tool",
@@ -93,8 +85,6 @@ def get_ai_response(user_message, conversation_history=None):
             "content": json.dumps(result),
         })
 
-    # Second call: give OpenAI the tool results so it can write the
-    # final, natural-language answer
     second_response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,

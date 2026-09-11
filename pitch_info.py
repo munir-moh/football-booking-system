@@ -1,14 +1,3 @@
-# pitch_info.py
-#
-# Static information about the football pitch itself.
-# This is NOT booking data (that lives in the database via models.py).
-# This is descriptive info the AI assistant can read when customers
-# ask general questions like opening hours, facilities, or policy.
-#
-# Edit the values below to match your real pitch. Later, if this
-# needs to change per-pitch or per-day, this can be moved into the
-# database without changing how the AI calls it.
-
 PITCH_INFO = {
     "name": "Elite Football Pitch",
     "opening_time": "07:00",

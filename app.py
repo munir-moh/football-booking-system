@@ -6,8 +6,14 @@ from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
 from booking_logic import is_time_conflict
 from datetime import datetime, timedelta
 from ai_service import get_ai_response
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import random
 import string
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -18,6 +24,12 @@ CORS(app, resources={
         "allow_headers": ["Content-Type", "X-ADMIN-PASSWORD"]
     }
 })
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],  
+)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///football_booking.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -164,19 +176,30 @@ def confirm_booking(reference):
     })
 
 @app.route("/api/ai/chat", methods=["POST"])
+@limiter.limit("10 per minute")
 def ai_chat():
     data = request.get_json()
 
     if not data or "message" not in data:
         return jsonify({"error": "A 'message' field is required."}), 400
 
-    user_message = data["message"]
+    user_message = data["message"].strip() if isinstance(data["message"], str) else ""
+
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty."}), 400
+
+    if len(user_message) > 500:
+        return jsonify({"error": "Message is too long. Please keep it under 500 characters."}), 400
+
     conversation_history = data.get("history", [])
+    if not isinstance(conversation_history, list):
+        conversation_history = []
 
     try:
         reply = get_ai_response(user_message, conversation_history)
         return jsonify({"reply": reply})
     except Exception as e:
+        logger.error(f"AI chat failed: {e}")
         return jsonify({"error": "The AI assistant is currently unavailable. Please try again shortly."}), 500
 
 @app.route("/", methods=["GET"])
