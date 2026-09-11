@@ -176,7 +176,7 @@ def confirm_booking(reference):
     })
 
 @app.route("/api/ai/chat", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("6 per minute")
 def ai_chat():
     data = request.get_json()
 
