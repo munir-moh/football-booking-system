@@ -5,6 +5,7 @@ from models import Booking
 from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
 from booking_logic import is_time_conflict
 from datetime import datetime, timedelta
+from ai_service import get_ai_response
 import random
 import string
 
@@ -162,6 +163,21 @@ def confirm_booking(reference):
         "status": "Confirmed"
     })
 
+@app.route("/api/ai/chat", methods=["POST"])
+def ai_chat():
+    data = request.get_json()
+
+    if not data or "message" not in data:
+        return jsonify({"error": "A 'message' field is required."}), 400
+
+    user_message = data["message"]
+    conversation_history = data.get("history", [])
+
+    try:
+        reply = get_ai_response(user_message, conversation_history)
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"error": "The AI assistant is currently unavailable. Please try again shortly."}), 500
 
 @app.route("/", methods=["GET"])
 def health_check():
