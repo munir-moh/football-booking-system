@@ -40,13 +40,6 @@ def build_system_prompt():
 MAX_HISTORY_MESSAGES = 10
 
 def get_ai_response(user_message, conversation_history=None):
-    """
-    Takes the user's new message and the prior conversation (if any),
-    and returns the AI's final text reply.
-
-    conversation_history: a list of {"role": "user"/"assistant", "content": "..."}
-    from earlier turns in this chat, or None for a fresh conversation.
-    """
     messages = [{"role": "system", "content": build_system_prompt()}]
 
     if conversation_history:

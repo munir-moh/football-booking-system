@@ -11,5 +11,5 @@ class Booking(db.Model):
     hours = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False)
     reference = db.Column(db.String(20), unique=True, nullable=False)
-    status = db.Column(db.String(20), default="Pending")  # Pending / Confirmed
+    status = db.Column(db.String(20), default="Pending")  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

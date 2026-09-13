@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ADMIN_PASSWORD = "supersecret123"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 PRICE_PER_HOUR = 10000
 MIN_HOURS = 1
 

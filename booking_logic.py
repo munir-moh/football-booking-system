@@ -16,16 +16,6 @@ def is_time_conflict(date, start_time, end_time):
 
 
 def is_within_operating_hours(booking_date, start_time, end_dt):
-    """
-    Checks a booking's start/end against the pitch's opening and
-    closing hours (defined in pitch_info.py).
-
-    Returns (True, None) if it's within hours.
-    Returns (False, reason) if it starts too early, ends too late,
-    or rolls over into the next calendar day (which also happens
-    to close a data bug where midnight-crossing bookings corrupt
-    the stored end_time).
-    """
     opening_time = datetime.strptime(PITCH_INFO["opening_time"], "%H:%M").time()
     closing_time = datetime.strptime(PITCH_INFO["closing_time"], "%H:%M").time()
 
@@ -38,14 +28,6 @@ def is_within_operating_hours(booking_date, start_time, end_dt):
     return True, None
 
 def is_within_lead_time(start_dt):
-    """
-    Enforces the minimum lead time stated in pitch_info.py's booking
-    policy: a booking's start time must be at least MIN_LEAD_HOURS
-    from right now.
-
-    Returns (True, None) if it's far enough in advance.
-    Returns (False, reason) if it's too soon or already in the past.
-    """
     MIN_LEAD_HOURS = 1
     earliest_allowed = datetime.now() + timedelta(hours=MIN_LEAD_HOURS)
 
