@@ -8,6 +8,7 @@ from ai_tools import (
     check_pitch_availability,
     get_booking_by_reference,
 )
+from datetime import datetime  
 import logging
 logger = logging.getLogger(__name__)
 
@@ -20,18 +21,21 @@ AVAILABLE_FUNCTIONS = {
     "get_booking_by_reference": get_booking_by_reference,
 }
 
-SYSTEM_PROMPT = (
-    "You are a helpful assistant for Elite Football Pitch, a football "
-    "pitch booking service. Answer questions about pricing, availability, "
-    "facilities, opening hours, and booking status ONLY by using the "
-    "tools provided to you. Never guess, assume, or make up any pricing, "
-    "availability, or policy information. If a tool doesn't give you "
-    "enough information to answer, say so honestly rather than guessing. "
-    "If the user gives a vague date like 'tomorrow', ask them to confirm "
-    "the exact date before calling a tool that needs one. "
-    "You cannot create, modify, or cancel bookings through this chat — "
-    "if asked, direct the user to the normal booking form on the website."
-)
+def build_system_prompt():
+    today_str = datetime.now().strftime("%A, %B %d, %Y")
+    return (
+        f"You are a helpful assistant for Elite Football Pitch, a football "
+        f"pitch booking service. Today's date is {today_str}. Use this to "
+        f"correctly resolve relative dates like 'tomorrow', 'this weekend', "
+        f"or 'next Friday' into exact calendar dates before calling any tool. "
+        f"Answer questions about pricing, availability, facilities, opening "
+        f"hours, and booking status ONLY by using the tools provided to you. "
+        f"Never guess, assume, or make up any pricing, availability, date, "
+        f"or policy information. If a tool doesn't give you enough "
+        f"information to answer, say so honestly rather than guessing. "
+        f"You cannot create, modify, or cancel bookings through this chat — "
+        f"if asked, direct the user to the normal booking form on the website."
+    )
 
 MAX_HISTORY_MESSAGES = 10
 
@@ -43,7 +47,7 @@ def get_ai_response(user_message, conversation_history=None):
     conversation_history: a list of {"role": "user"/"assistant", "content": "..."}
     from earlier turns in this chat, or None for a fresh conversation.
     """
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": build_system_prompt()}]
 
     if conversation_history:
         trimmed_history = conversation_history[-MAX_HISTORY_MESSAGES:]
