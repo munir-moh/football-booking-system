@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from models import Booking
-from booking_logic import is_time_conflict
+from booking_logic import is_time_conflict, is_within_operating_hours
 from pitch_info import PITCH_INFO
 from config import PRICE_PER_HOUR, MIN_HOURS
 
@@ -30,6 +30,9 @@ def check_pitch_availability(date, start_time, hours):
 
     start_dt = datetime.combine(booking_date, start)
     end_dt = start_dt + timedelta(hours=hours)
+    is_valid, reason = is_within_operating_hours(booking_date, start, end_dt)
+    if not is_valid:
+        return {"available": False, "error": reason}
     end_time = end_dt.time()
 
     if is_time_conflict(booking_date, start, end_time):

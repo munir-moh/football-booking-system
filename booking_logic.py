@@ -1,5 +1,6 @@
 from datetime import datetime
 from models import Booking
+from pitch_info import PITCH_INFO
 
 
 def is_time_conflict(date, start_time, end_time):
@@ -12,3 +13,26 @@ def is_time_conflict(date, start_time, end_time):
         if new_start < existing_end and new_end > existing_start:
             return True
     return False
+
+
+def is_within_operating_hours(booking_date, start_time, end_dt):
+    """
+    Checks a booking's start/end against the pitch's opening and
+    closing hours (defined in pitch_info.py).
+
+    Returns (True, None) if it's within hours.
+    Returns (False, reason) if it starts too early, ends too late,
+    or rolls over into the next calendar day (which also happens
+    to close a data bug where midnight-crossing bookings corrupt
+    the stored end_time).
+    """
+    opening_time = datetime.strptime(PITCH_INFO["opening_time"], "%H:%M").time()
+    closing_time = datetime.strptime(PITCH_INFO["closing_time"], "%H:%M").time()
+
+    if start_time < opening_time:
+        return False, f"The pitch opens at {PITCH_INFO['opening_time']}. Please choose a later start time."
+
+    if end_dt.date() != booking_date or end_dt.time() > closing_time:
+        return False, f"The pitch closes at {PITCH_INFO['closing_time']}. Please choose an earlier start time or a shorter duration."
+
+    return True, None
