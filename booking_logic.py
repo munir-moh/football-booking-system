@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from models import Booking
 from pitch_info import PITCH_INFO
 
@@ -34,5 +34,22 @@ def is_within_operating_hours(booking_date, start_time, end_dt):
 
     if end_dt.date() != booking_date or end_dt.time() > closing_time:
         return False, f"The pitch closes at {PITCH_INFO['closing_time']}. Please choose an earlier start time or a shorter duration."
+
+    return True, None
+
+def is_within_lead_time(start_dt):
+    """
+    Enforces the minimum lead time stated in pitch_info.py's booking
+    policy: a booking's start time must be at least MIN_LEAD_HOURS
+    from right now.
+
+    Returns (True, None) if it's far enough in advance.
+    Returns (False, reason) if it's too soon or already in the past.
+    """
+    MIN_LEAD_HOURS = 1
+    earliest_allowed = datetime.now() + timedelta(hours=MIN_LEAD_HOURS)
+
+    if start_dt < earliest_allowed:
+        return False, f"Bookings must be made at least {MIN_LEAD_HOURS} hour(s) before the desired start time."
 
     return True, None

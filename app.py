@@ -3,7 +3,7 @@ from flask_cors import CORS
 from database import db, init_db
 from models import Booking
 from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
-from booking_logic import is_time_conflict, is_within_operating_hours
+from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time
 from datetime import datetime, timedelta
 from ai_service import get_ai_response
 from flask_limiter import Limiter
@@ -88,6 +88,9 @@ def book():
     start_dt = datetime.combine(booking_date, start_time)
     end_dt = start_dt + timedelta(hours=hours)
     is_valid, reason = is_within_operating_hours(booking_date, start_time, end_dt)
+    if not is_valid:
+        return jsonify({"error": reason}), 400
+    is_valid, reason = is_within_lead_time(start_dt)
     if not is_valid:
         return jsonify({"error": reason}), 400
     end_time = end_dt.time()
