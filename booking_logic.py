@@ -35,3 +35,8 @@ def is_within_lead_time(start_dt):
         return False, f"Bookings must be made at least {MIN_LEAD_HOURS} hour(s) before the desired start time."
 
     return True, None
+
+def is_valid_start_time(start_time):
+    if start_time.minute not in (0, 30):
+        return False, "Bookings can only start on the hour or half-hour (e.g. 10:00 or 10:30)."
+    return True, None

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from models import Booking
-from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time
+from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time
 from pitch_info import PITCH_INFO
 from config import PRICE_PER_HOUR, MIN_HOURS
 
@@ -25,6 +25,10 @@ def check_pitch_availability(date, start_time, hours):
     except (ValueError, TypeError):
         return {"available": False, "error": "Invalid date, time, or hours format."}
 
+    is_valid, reason = is_valid_start_time(start)
+    if not is_valid:
+        return {"available": False, "error": reason}
+    
     if hours < MIN_HOURS:
         return {"available": False, "error": f"Minimum booking is {MIN_HOURS} hour(s)."}
 
