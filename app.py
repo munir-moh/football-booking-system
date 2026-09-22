@@ -185,6 +185,21 @@ def confirm_booking(reference):
         "status": "Confirmed"
     })
 
+@app.route("/api/admin/booking/<reference>", methods=["DELETE"])
+def delete_booking(reference):
+    admin_pass = request.headers.get("X-ADMIN-PASSWORD")
+    if admin_pass != ADMIN_PASSWORD:
+        return jsonify({"error": "Unauthorized access"}), 401
+
+    booking = Booking.query.filter_by(reference=reference).first()
+    if not booking:
+        return jsonify({"error": "Booking not found"}), 404
+
+    db.session.delete(booking)
+    db.session.commit()
+
+    return jsonify({"message": f"Booking {reference} deleted successfully"})
+
 @app.route("/api/ai/chat", methods=["POST"])
 @limiter.limit("6 per minute")
 def ai_chat():
