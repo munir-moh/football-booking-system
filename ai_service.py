@@ -8,6 +8,7 @@ from ai_tools import (
     check_pitch_availability,
     get_booking_by_reference,
 )
+from booking_logic import now_in_nigeria
 from datetime import datetime  
 import logging
 logger = logging.getLogger(__name__)
@@ -22,16 +23,24 @@ AVAILABLE_FUNCTIONS = {
 }
 
 def build_system_prompt():
-    today_str = datetime.now().strftime("%A, %B %d, %Y")
+    now = now_in_nigeria()
+    today_str = now.strftime("%A, %B %d, %Y")
+    current_time_str = now.strftime("%I:%M %p")
     return (
         f"You are a helpful assistant for Elite Football Pitch, a football "
-        f"pitch booking service. Today's date is {today_str}. Use this to "
-        f"correctly resolve relative dates like 'tomorrow', 'this weekend', "
-        f"or 'next Friday' into exact calendar dates before calling any tool. "
+        f"pitch booking service in Nigeria. The current date and time in "
+        f"Nigeria (West Africa Time) is {today_str}, {current_time_str}. "
+        f"Use this to correctly resolve relative dates and times like "
+        f"'tomorrow', 'this weekend', or 'in an hour' into exact values "
+        f"before calling any tool. "
+        f"When calling tools, pass times in 24-hour HH:MM format as the "
+        f"tools require. However, when speaking to the user, ALWAYS "
+        f"present times in 12-hour format with AM/PM (e.g. '3:00 PM', "
+        f"never '15:00'). "
         f"Answer questions about pricing, availability, facilities, opening "
         f"hours, and booking status ONLY by using the tools provided to you. "
         f"Never guess, assume, or make up any pricing, availability, date, "
-        f"or policy information. If a tool doesn't give you enough "
+        f"time, or policy information. If a tool doesn't give you enough "
         f"information to answer, say so honestly rather than guessing. "
         f"You cannot create, modify, or cancel bookings through this chat — "
         f"if asked, direct the user to the normal booking form on the website."

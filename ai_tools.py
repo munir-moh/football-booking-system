@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from models import Booking
-from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time
+from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time, format_time_12h
 from pitch_info import PITCH_INFO
 from config import PRICE_PER_HOUR, MIN_HOURS
 
@@ -63,7 +63,7 @@ def get_booking_by_reference(reference):
     return {
         "found": True,
         "date": booking.date.strftime("%Y-%m-%d"),
-        "time": f"{booking.start_time.strftime('%H:%M')} - {booking.end_time.strftime('%H:%M')}",
+        "time": f"{format_time_12h(booking.start_time)} - {format_time_12h(booking.end_time)}",
         "hours": booking.hours,
         "price": booking.price,
         "status": booking.status

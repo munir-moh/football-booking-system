@@ -3,7 +3,7 @@ from flask_cors import CORS
 from database import db, init_db
 from models import Booking
 from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
-from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time
+from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time, format_time_12h
 from datetime import datetime, timedelta
 from ai_service import get_ai_response
 from flask_limiter import Limiter
@@ -131,7 +131,7 @@ def book():
             "name": name,
             "phone": phone,
             "date": date_str,
-            "time": f"{start_time_str} - {end_time.strftime('%H:%M')}",
+            "time": f"{format_time_12h(start_time)} - {format_time_12h(end_time)}",
             "hours": hours,
             "price": price,
             "reference": reference,
@@ -158,7 +158,7 @@ def view_bookings():
             "name": b.name,
             "phone": b.phone,
             "date": b.date.strftime("%Y-%m-%d"),
-            "time": f"{b.start_time.strftime('%H:%M')} - {b.end_time.strftime('%H:%M')}",
+            "time": f"{format_time_12h(b.start_time)} - {format_time_12h(b.end_time)}",
             "hours": b.hours,
             "price": b.price,
             "reference": b.reference,
