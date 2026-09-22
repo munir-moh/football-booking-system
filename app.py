@@ -19,7 +19,11 @@ app = Flask(__name__)
 
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://localhost:5173", "https://*"],
+        "origins": [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://football-booking-system-rn.vercel.app"
+        ],
         "methods": ["GET", "POST", "PUT", "DELETE"],
         "allow_headers": ["Content-Type", "X-ADMIN-PASSWORD"]
     }
@@ -45,6 +49,7 @@ def generate_reference():
             return ref
 
 @app.route("/api/book", methods=["POST"])
+@limiter.limit("10 per minute;50 per day")
 def book():
     data = request.get_json()
 
@@ -146,6 +151,7 @@ def book():
 
 
 @app.route("/api/admin/bookings", methods=["GET"])
+@limiter.limit("3 per minute;15 per hour")
 def view_bookings():
     admin_pass = request.headers.get("X-ADMIN-PASSWORD")
     if admin_pass != ADMIN_PASSWORD:
@@ -168,6 +174,7 @@ def view_bookings():
 
 
 @app.route("/api/admin/confirm/<reference>", methods=["POST"])
+@limiter.limit("3 per minute;15 per hour")
 def confirm_booking(reference):
     admin_pass = request.headers.get("X-ADMIN-PASSWORD")
     if admin_pass != ADMIN_PASSWORD:
@@ -186,6 +193,7 @@ def confirm_booking(reference):
     })
 
 @app.route("/api/admin/booking/<reference>", methods=["DELETE"])
+@limiter.limit("3 per minute;15 per hour")
 def delete_booking(reference):
     admin_pass = request.headers.get("X-ADMIN-PASSWORD")
     if admin_pass != ADMIN_PASSWORD:
