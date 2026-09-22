@@ -11,6 +11,7 @@ from flask_limiter.util import get_remote_address
 import random
 import string
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ limiter = Limiter(
     default_limits=[],  
 )
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///football_booking.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 init_db(app)
