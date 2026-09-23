@@ -186,6 +186,7 @@ def view_bookings():
         results.append({
             "name": b.name,
             "phone": b.phone,
+            "email": b.email,
             "date": b.date.strftime("%Y-%m-%d"),
             "time": f"{format_time_12h(b.start_time)} - {format_time_12h(b.end_time)}",
             "hours": b.hours,
