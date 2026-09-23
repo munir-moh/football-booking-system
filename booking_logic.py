@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 NIGERIA_TZ = ZoneInfo("Africa/Lagos")
 
 def is_time_conflict(date, start_time, end_time):
-    bookings = Booking.query.filter_by(date=date).all()
+    bookings = Booking.query.filter_by(date=date).filter(Booking.status != "Failed").all()
     for b in bookings:
         existing_start = datetime.combine(b.date, b.start_time)
         existing_end = datetime.combine(b.date, b.end_time)

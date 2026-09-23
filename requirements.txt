@@ -6,3 +6,4 @@ openai
 python-dotenv
 Flask-Limiter
 psycopg2-binary
+requests

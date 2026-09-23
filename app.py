@@ -2,16 +2,20 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import db, init_db
 from models import Booking
-from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS
+from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS, FRONTEND_URL, PAYSTACK_SECRET_KEY
 from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time, format_time_12h
 from datetime import datetime, timedelta
 from ai_service import get_ai_response
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from payment_service import initialize_transaction, verify_transaction
 import random
 import string
 import logging
 import os
+import re
+import hmac
+import hashlib
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,20 +64,25 @@ def book():
     try:
         name = data.get('name') or data.get('fullName')
         phone = data.get('phone') or data.get('phoneNumber')
+        email = data.get('email')
         date_str = data.get('date')
         start_time_str = data.get('start_time') or data.get('startTime')
 
         duration = data.get('duration') or data.get('hours')
 
-        if not all([name, phone, date_str, start_time_str, duration]):
+        if not all([name, phone, email, date_str, start_time_str, duration]):
             missing = []
             if not name: missing.append('name/fullName')
             if not phone: missing.append('phone/phoneNumber')
+            if not email: missing.append('email')
             if not date_str: missing.append('date')
             if not start_time_str: missing.append('start_time/startTime')
             if not duration: missing.append('duration/hours')
             return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
-
+        
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            return jsonify({"error": "Please provide a valid email address."}), 400
+        
         if isinstance(duration, str):
             hours = int(''.join(filter(str.isdigit, duration)))
         else:
@@ -114,6 +123,7 @@ def book():
     new_booking = Booking(
         name=name,
         phone=phone,
+        email=email,
         date=booking_date,
         start_time=start_time,
         end_time=end_time,
@@ -130,12 +140,26 @@ def book():
         db.session.rollback()
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
+    callback_url = f"{FRONTEND_URL}/payment-callback"
+    payment_result = initialize_transaction(
+        email=email,
+        amount_naira=price,
+        reference=reference,
+        callback_url=callback_url
+    )
+
+    if not payment_result["success"]:
+        db.session.delete(new_booking)
+        db.session.commit()
+        return jsonify({"error": f"Could not start payment: {payment_result['error']}"}), 502
+
     return jsonify({
         "success": True,
-        "message": "Booking created successfully",
+        "message": "Booking created, proceed to payment",
         "booking": {
             "name": name,
             "phone": phone,
+            "email": email,
             "date": date_str,
             "time": f"{format_time_12h(start_time)} - {format_time_12h(end_time)}",
             "hours": hours,
@@ -143,10 +167,8 @@ def book():
             "reference": reference,
             "status": "Pending"
         },
-        "payment_details": {
-            "bank": "Access Bank",
-            "account_name": "Elite Football Pitch",
-            "account_number": "0123456789"
+        "payment": {
+            "authorization_url": payment_result["authorization_url"]
         }
     }), 201
 
@@ -173,6 +195,59 @@ def view_bookings():
         })
     return jsonify(results)
 
+@app.route("/api/payment/webhook", methods=["POST"])
+def paystack_webhook():
+    signature = request.headers.get("x-paystack-signature", "")
+    raw_body = request.get_data()
+
+    expected_signature = hmac.new(
+        PAYSTACK_SECRET_KEY.encode("utf-8"),
+        raw_body,
+        hashlib.sha512
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected_signature, signature):
+        logger.error("Paystack webhook signature mismatch — possible spoofed request.")
+        return jsonify({"error": "Invalid signature"}), 401
+
+    event = request.get_json()
+
+    if event.get("event") == "charge.success":
+        reference = event["data"]["reference"]
+        booking = Booking.query.filter_by(reference=reference).first()
+
+        if booking and booking.status == "Pending":
+            booking.status = "Confirmed"
+            db.session.commit()
+            logger.info(f"Booking {reference} confirmed via webhook.")
+
+    return jsonify({"status": "received"}), 200
+
+@app.route("/api/payment/verify/<reference>", methods=["GET"])
+def verify_payment(reference):
+    booking = Booking.query.filter_by(reference=reference).first()
+    if not booking:
+        return jsonify({"error": "Booking not found"}), 404
+
+    if booking.status == "Confirmed":
+        return jsonify({"status": "Confirmed", "reference": reference})
+
+    if booking.status == "Failed":
+        return jsonify({"status": "Failed", "reference": reference})
+
+    result = verify_transaction(reference)
+
+    if not result["success"]:
+        return jsonify({"error": result["error"]}), 502
+
+    if result["status"] == "success":
+        booking.status = "Confirmed"
+        db.session.commit()
+        return jsonify({"status": "Confirmed", "reference": reference})
+    else:
+        booking.status = "Failed"
+        db.session.commit()
+        return jsonify({"status": "Failed", "reference": reference})
 
 @app.route("/api/admin/confirm/<reference>", methods=["POST"])
 @limiter.limit("3 per minute;15 per hour")
