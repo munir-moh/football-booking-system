@@ -3,7 +3,7 @@ from flask_cors import CORS
 from database import db, init_db
 from models import Booking
 from config import ADMIN_PASSWORD, PRICE_PER_HOUR, MIN_HOURS, FRONTEND_URL, PAYSTACK_SECRET_KEY
-from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time, format_time_12h
+from booking_logic import is_time_conflict, is_within_operating_hours, is_within_lead_time, is_valid_start_time, format_time_12h, reconcile_pending_payments
 from datetime import datetime, timedelta
 from ai_service import get_ai_response
 from flask_limiter import Limiter
@@ -180,6 +180,7 @@ def view_bookings():
     if admin_pass != ADMIN_PASSWORD:
         return jsonify({"error": "Unauthorized access"}), 401
 
+    reconcile_pending_payments()
     bookings = Booking.query.order_by(Booking.date, Booking.start_time).all()
     results = []
     for b in bookings:
@@ -251,7 +252,7 @@ def verify_payment(reference):
         return jsonify({"status": "Failed", "reference": reference})
 
 @app.route("/api/admin/confirm/<reference>", methods=["POST"])
-@limiter.limit("3 per minute;15 per hour")
+@limiter.limit("15 per minute;60 per hour")
 def confirm_booking(reference):
     admin_pass = request.headers.get("X-ADMIN-PASSWORD")
     if admin_pass != ADMIN_PASSWORD:
@@ -270,7 +271,7 @@ def confirm_booking(reference):
     })
 
 @app.route("/api/admin/booking/<reference>", methods=["DELETE"])
-@limiter.limit("3 per minute;15 per hour")
+@limiter.limit("15 per minute;60 per hour")
 def delete_booking(reference):
     admin_pass = request.headers.get("X-ADMIN-PASSWORD")
     if admin_pass != ADMIN_PASSWORD:

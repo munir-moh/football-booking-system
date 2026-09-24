@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from models import Booking
 from pitch_info import PITCH_INFO
 from zoneinfo import ZoneInfo
+from database import db
+from payment_service import verify_transaction
 
 NIGERIA_TZ = ZoneInfo("Africa/Lagos")
 
@@ -51,3 +53,20 @@ def format_time_12h(time_obj):
 def format_time_string_12h(time_str):
     parsed = datetime.strptime(time_str, "%H:%M").time()
     return format_time_12h(parsed)
+
+def reconcile_pending_payments(min_age_minutes=15):
+    cutoff = datetime.utcnow() - timedelta(minutes=min_age_minutes)
+    stale_pending = Booking.query.filter(
+        Booking.status == "Pending",
+        Booking.created_at < cutoff
+    ).all()
+
+    for booking in stale_pending:
+        result = verify_transaction(booking.reference)
+        if not result["success"]:
+            continue  
+
+        booking.status = "Confirmed" if result["status"] == "success" else "Failed"
+
+    if stale_pending:
+        db.session.commit()
