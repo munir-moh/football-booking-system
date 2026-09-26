@@ -3,12 +3,11 @@ from models import Booking
 from pitch_info import PITCH_INFO
 from zoneinfo import ZoneInfo
 from database import db
-from payment_service import verify_transaction
 
 NIGERIA_TZ = ZoneInfo("Africa/Lagos")
 
 def is_time_conflict(date, start_time, end_time):
-    bookings = Booking.query.filter_by(date=date).filter(Booking.status != "Failed").all()
+    bookings = Booking.query.filter_by(date=date, status="Confirmed").all()
     for b in bookings:
         existing_start = datetime.combine(b.date, b.start_time)
         existing_end = datetime.combine(b.date, b.end_time)
@@ -53,20 +52,3 @@ def format_time_12h(time_obj):
 def format_time_string_12h(time_str):
     parsed = datetime.strptime(time_str, "%H:%M").time()
     return format_time_12h(parsed)
-
-def reconcile_pending_payments(min_age_minutes=15):
-    cutoff = datetime.utcnow() - timedelta(minutes=min_age_minutes)
-    stale_pending = Booking.query.filter(
-        Booking.status == "Pending",
-        Booking.created_at < cutoff
-    ).all()
-
-    for booking in stale_pending:
-        result = verify_transaction(booking.reference)
-        if not result["success"]:
-            continue  
-
-        booking.status = "Confirmed" if result["status"] == "success" else "Failed"
-
-    if stale_pending:
-        db.session.commit()
