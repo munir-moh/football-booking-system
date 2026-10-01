@@ -1,3 +1,5 @@
+from config import MIN_HOURS
+
 PITCH_INFO = {
     "name": "Elite Football Pitch",
     "opening_time": "07:00",
@@ -8,12 +10,19 @@ PITCH_INFO = {
         "Free parking",
         "Drinking water station"
     ],
+    "minimum_booking_hours": MIN_HOURS,
+    "minimum_advance_booking_hours": 1,
+    "start_time_rule": "Bookings can start on the hour or half-hour.",
     "discounts": "No discounts are currently available. Standard rate applies to all bookings.",
-    "booking_policy": (
-        "Bookings must be made at least 1 hour before the desired start time. "
-        "Cancellations are not currently supported through the app — contact the "
-        "pitch directly for cancellation requests. Payment must be completed "
-        "within 24 hours of booking, or the slot may be released."
+    "payment_method": (
+        "Customers complete payment through Paystack checkout during the booking flow."
     ),
-    "minimum_booking_hours": 1
+    "confirmation_policy": (
+        "A customer booking is confirmed after Paystack reports a successful payment "
+        "through its webhook or payment verification."
+    ),
+    "cancellation_policy": (
+        "Customer self-service cancellations are not available in the app. Contact "
+        "the pitch directly to request a cancellation."
+    )
 }

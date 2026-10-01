@@ -42,8 +42,15 @@ def build_system_prompt():
         f"Never guess, assume, or make up any pricing, availability, date, "
         f"time, or policy information. If a tool doesn't give you enough "
         f"information to answer, say so honestly rather than guessing. "
-        f"You cannot create, modify, or cancel bookings through this chat — "
-        f"if asked, direct the user to the normal booking form on the website."
+        f"For broad questions like 'tell me about the pitch', use the "
+        f"get_pitch_info tool and include the relevant facts it returns. "
+        f"Whenever an answer contains multiple facts, format it as a Markdown "
+        f"bulleted list with one distinct point per bullet and each bullet on "
+        f"its own line. Do not combine multiple points into one paragraph. "
+        f"You cannot create, modify, or cancel bookings through this chat. "
+        f"For new bookings, direct the user to the normal booking form on the "
+        f"website. For changes or cancellations, explain that chat cannot make "
+        f"the change and follow the relevant policy returned by the tools."
     )
 
 MAX_HISTORY_MESSAGES = 10

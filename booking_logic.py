@@ -30,7 +30,7 @@ def is_within_operating_hours(booking_date, start_time, end_dt):
     return True, None
 
 def is_within_lead_time(start_dt):
-    MIN_LEAD_HOURS = 1
+    MIN_LEAD_HOURS = PITCH_INFO["minimum_advance_booking_hours"]
     earliest_allowed = now_in_nigeria() + timedelta(hours=MIN_LEAD_HOURS)
 
     if start_dt < earliest_allowed:

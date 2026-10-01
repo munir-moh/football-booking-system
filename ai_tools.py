@@ -6,7 +6,11 @@ from config import PRICE_PER_HOUR, MIN_HOURS
 
 
 def get_pitch_info():
-    return PITCH_INFO
+    return {
+        **PITCH_INFO,
+        "price_per_hour": PRICE_PER_HOUR,
+        "currency": "NGN",
+    }
 
 
 def get_pricing_info():

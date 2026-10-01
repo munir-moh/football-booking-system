@@ -4,11 +4,12 @@ TOOLS = [
         "function": {
             "name": "get_pitch_info",
             "description": (
-                "Get general information about the football pitch: "
-                "opening and closing hours, available facilities, "
-                "discounts, and the booking policy. Use this for "
-                "questions like 'what time does it open', "
-                "'what facilities are there', or 'what's the policy'."
+                "Get the current overview of Elite Football Pitch, including "
+                "opening hours, facilities, hourly price, minimum booking length, "
+                "booking-time rules, Paystack payment and confirmation, discounts, "
+                "and cancellation policy. Use this for broad questions such as "
+                "'tell me about the pitch' as well as questions about its hours, "
+                "facilities, or booking policies."
             ),
             "parameters": {
                 "type": "object",
